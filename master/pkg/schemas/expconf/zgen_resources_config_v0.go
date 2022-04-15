@@ -95,6 +95,17 @@ func (r *ResourcesConfigV0) SetPriority(val *int) {
 	r.RawPriority = val
 }
 
+func (r ResourcesConfigV0) IPUs() int {
+	if r.RawIPUs == nil {
+		panic("You must call WithDefaults on ResourcesConfigV0 before .IPUs")
+	}
+	return *r.RawIPUs
+}
+
+func (r *ResourcesConfigV0) SetIPUs(val int) {
+	r.RawIPUs = &val
+}
+
 func (r ResourcesConfigV0) Devices() DevicesConfigV0 {
 	return r.RawDevices
 }

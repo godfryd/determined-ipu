@@ -71,6 +71,7 @@ type ResourcesConfig struct {
 	AgentLabel     string  `json:"agent_label"`
 	ResourcePool   string  `json:"resource_pool"`
 	Priority       *int    `json:"priority,omitempty"`
+	IPUs           *int    `json:"ipus,omitempty"`
 
 	Devices DevicesConfig `json:"devices"`
 }

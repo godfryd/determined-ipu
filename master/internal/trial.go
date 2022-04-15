@@ -248,6 +248,7 @@ func (t *trial) maybeAllocateTask(ctx *actor.Context) error {
 		FittingRequirements: sproto.FittingRequirements{
 			SingleAgent: false,
 		},
+		IPUs:         t.config.Resources().IPUs(),
 
 		Preemptible: true,
 	}, t.db, t.rm, t.taskLogger))

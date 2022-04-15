@@ -61,6 +61,7 @@ type EnvironmentImageMapV0 struct {
 	RawCPU  *string `json:"cpu"`
 	RawCUDA *string `json:"cuda"`
 	RawROCM *string `json:"rocm"`
+	RawVPOD *string `json:"vpod"`
 }
 
 // WithDefaults implements the Defaultable interface.
@@ -68,6 +69,7 @@ func (e EnvironmentImageMapV0) WithDefaults() interface{} {
 	cpu := CPUImage
 	cuda := CUDAImage
 	rocm := ROCMImage
+	vpod := VPODImage
 	if e.RawCPU != nil {
 		cpu = *e.RawCPU
 	}
@@ -77,7 +79,10 @@ func (e EnvironmentImageMapV0) WithDefaults() interface{} {
 	if e.RawCUDA != nil {
 		cuda = *e.RawCUDA
 	}
-	return EnvironmentImageMapV0{RawCPU: &cpu, RawCUDA: &cuda, RawROCM: &rocm}
+	if e.RawVPOD != nil {
+		rocm = *e.RawVPOD
+	}
+	return EnvironmentImageMapV0{RawCPU: &cpu, RawCUDA: &cuda, RawROCM: &rocm, RawVPOD: &vpod}
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
@@ -87,6 +92,7 @@ func (e *EnvironmentImageMapV0) UnmarshalJSON(data []byte) error {
 		e.RawCPU = &plain
 		e.RawCUDA = &plain
 		e.RawROCM = &plain
+		e.RawVPOD = &plain
 		return nil
 	}
 
@@ -99,6 +105,7 @@ func (e *EnvironmentImageMapV0) UnmarshalJSON(data []byte) error {
 	e.RawCPU = jsonItem.RawCPU
 	e.RawROCM = jsonItem.RawROCM
 	e.RawCUDA = jsonItem.RawCUDA
+	e.RawVPOD = jsonItem.RawVPOD
 
 	if e.RawCUDA == nil {
 		type EnvironmentImageMapV0Compat struct {
@@ -124,6 +131,8 @@ func (e EnvironmentImageMapV0) For(deviceType device.Type) string {
 		return *e.RawCUDA
 	case device.ROCM:
 		return *e.RawROCM
+	case device.VPOD:
+		return *e.RawVPOD
 	default:
 		panic(fmt.Sprintf("unexpected device type: %s", deviceType))
 	}
@@ -135,6 +144,7 @@ type EnvironmentVariablesMapV0 struct {
 	RawCPU  []string `json:"cpu"`
 	RawCUDA []string `json:"cuda"`
 	RawROCM []string `json:"rocm"`
+	RawVPOD []string `json:"vpod"`
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
@@ -144,10 +154,12 @@ func (e *EnvironmentVariablesMapV0) UnmarshalJSON(data []byte) error {
 		e.RawCPU = []string{}
 		e.RawCUDA = []string{}
 		e.RawROCM = []string{}
+		e.RawVPOD = []string{}
 
 		e.RawCPU = append(e.RawCPU, plain...)
 		e.RawROCM = append(e.RawROCM, plain...)
 		e.RawCUDA = append(e.RawCUDA, plain...)
+		e.RawVPOD = append(e.RawVPOD, plain...)
 		return nil
 	}
 
@@ -159,12 +171,16 @@ func (e *EnvironmentVariablesMapV0) UnmarshalJSON(data []byte) error {
 	e.RawCPU = []string{}
 	e.RawCUDA = []string{}
 	e.RawROCM = []string{}
+	e.RawVPOD = []string{}
 
 	if jsonItems.RawCPU != nil {
 		e.RawCPU = append(e.RawCPU, jsonItems.RawCPU...)
 	}
 	if jsonItems.RawROCM != nil {
 		e.RawROCM = append(e.RawROCM, jsonItems.RawROCM...)
+	}
+	if jsonItems.RawVPOD != nil {
+		e.RawVPOD = append(e.RawVPOD, jsonItems.RawVPOD...)
 	}
 
 	if jsonItems.RawCUDA != nil {
@@ -193,6 +209,8 @@ func (e EnvironmentVariablesMapV0) For(deviceType device.Type) []string {
 		return e.RawCUDA
 	case device.ROCM:
 		return e.RawROCM
+	case device.VPOD:
+		return e.RawVPOD
 	default:
 		panic(fmt.Sprintf("unexpected device type: %s", deviceType))
 	}

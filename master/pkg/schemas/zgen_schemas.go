@@ -1966,6 +1966,13 @@ var (
                 "null"
             ],
             "default": 1
+        },
+        "ipus": {
+            "type": [
+                "integer",
+                "null"
+            ],
+            "default": 1
         }
     }
 }

@@ -50,6 +50,13 @@ func (a *agent) detect() error {
 		}
 
 		a.Devices = devices
+	case a.SlotType == "ipu":
+		devices, err := detectIPUs()
+		if err != nil {
+			return errors.Wrap(err, "error while gathering IPU POD info from V-IPU Controller")
+		}
+
+		a.Devices = devices
 	case a.SlotType == "cpu":
 		devices, err := detectCPUs()
 		if err != nil {
@@ -65,6 +72,12 @@ func (a *agent) detect() error {
 			devices, err = detectRocmGPUs(a.Options.VisibleGPUs)
 			if err != nil {
 				return errors.Wrap(err, "error while gathering GPU info through rocm-smi command")
+			}
+		}
+		if len(devices) == 0 {
+			devices, err = detectIPUs()
+			if err != nil {
+				return errors.Wrap(err, "error while gathering IPU POD info from V-IPU Controller")
 			}
 		}
 		if len(devices) == 0 {

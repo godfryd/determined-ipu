@@ -8,7 +8,8 @@
     "eventuallyRequired": [
         "cpu",
         "cuda",
-        "rocm"
+        "rocm",
+        "vpod"
     ],
     "properties": {
         "cpu": {
@@ -26,6 +27,13 @@
             "default": null
         },
         "rocm": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "default": null
+        },
+        "vpod": {
             "type": [
                 "string",
                 "null"

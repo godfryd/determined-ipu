@@ -194,6 +194,7 @@ type ResourcesConfigV0 struct {
 	RawAgentLabel     *string  `json:"agent_label"`
 	RawResourcePool   *string  `json:"resource_pool"`
 	RawPriority       *int     `json:"priority"`
+	RawIPUs           *int     `json:"ipus"`
 
 	RawDevices DevicesConfigV0 `json:"devices"`
 }

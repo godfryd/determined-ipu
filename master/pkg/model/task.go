@@ -90,6 +90,7 @@ type Allocation struct {
 	AllocationID AllocationID     `db:"allocation_id"`
 	TaskID       TaskID           `db:"task_id"`
 	Slots        int              `db:"slots"`
+	IPUs         int              `db:"ipus"`
 	AgentLabel   string           `db:"agent_label"`
 	ResourcePool string           `db:"resource_pool"`
 	StartTime    *time.Time       `db:"start_time"`

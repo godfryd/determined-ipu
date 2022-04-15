@@ -41,6 +41,7 @@ type RuntimeItem struct {
 	CPU  string `json:"cpu,omitempty"`
 	CUDA string `json:"cuda,omitempty"`
 	ROCM string `json:"rocm,omitempty"`
+	VPOD string `json:"vpod,omitempty"`
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
@@ -50,6 +51,7 @@ func (r *RuntimeItem) UnmarshalJSON(data []byte) error {
 		r.CPU = plain
 		r.ROCM = plain
 		r.CUDA = plain
+		r.VPOD = plain
 		return nil
 	}
 
@@ -61,6 +63,7 @@ func (r *RuntimeItem) UnmarshalJSON(data []byte) error {
 	r.CPU = jsonItem.CPU
 	r.ROCM = jsonItem.ROCM
 	r.CUDA = jsonItem.CUDA
+	r.VPOD = jsonItem.VPOD
 
 	if r.CUDA == "" {
 		type RuntimeItemCompat struct {
@@ -85,6 +88,8 @@ func (r RuntimeItem) For(deviceType device.Type) string {
 		return r.CUDA
 	case device.ROCM:
 		return r.ROCM
+	case device.VPOD:
+		return r.VPOD
 	default:
 		panic(fmt.Sprintf("unexpected device type: %s", deviceType))
 	}
@@ -95,6 +100,7 @@ type RuntimeItems struct {
 	CPU  []string `json:"cpu,omitempty"`
 	CUDA []string `json:"cuda,omitempty"`
 	ROCM []string `json:"rocm,omitempty"`
+	VPOD []string `json:"vpod,omitempty"`
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
@@ -104,6 +110,7 @@ func (r *RuntimeItems) UnmarshalJSON(data []byte) error {
 		r.CPU = append(r.CPU, plain...)
 		r.ROCM = append(r.ROCM, plain...)
 		r.CUDA = append(r.CUDA, plain...)
+		r.VPOD = append(r.VPOD, plain...)
 		return nil
 	}
 
@@ -114,6 +121,7 @@ func (r *RuntimeItems) UnmarshalJSON(data []byte) error {
 	}
 	r.CPU = append(r.CPU, jsonItems.CPU...)
 	r.ROCM = append(r.ROCM, jsonItems.ROCM...)
+	r.VPOD = append(r.VPOD, jsonItems.VPOD...)
 
 	r.CUDA = append(r.CUDA, jsonItems.CUDA...)
 
@@ -139,6 +147,8 @@ func (r *RuntimeItems) For(deviceType device.Type) []string {
 		return r.CUDA
 	case device.ROCM:
 		return r.ROCM
+	case device.VPOD:
+		return r.VPOD
 	default:
 		panic(fmt.Sprintf("unexpected device type: %s", deviceType))
 	}

@@ -3,15 +3,15 @@ package resourcemanagers
 import (
 	"crypto/tls"
 	"fmt"
+	"net"
+	"regexp"
+	"time"
 
 	"github.com/shopspring/decimal"
-
-	"github.com/determined-ai/determined/master/pkg/logger"
-	"github.com/determined-ai/determined/master/pkg/model"
-
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
+	"github.com/determined-ai/determined/master/pkg/logger"
 	"github.com/determined-ai/determined/master/internal/config"
 	"github.com/determined-ai/determined/master/internal/db"
 	"github.com/determined-ai/determined/master/internal/job"
@@ -23,7 +23,9 @@ import (
 	"github.com/determined-ai/determined/master/pkg/aproto"
 	"github.com/determined-ai/determined/master/pkg/cproto"
 	"github.com/determined-ai/determined/master/pkg/device"
+	"github.com/determined-ai/determined/master/pkg/model"
 	"github.com/determined-ai/determined/master/pkg/tasks"
+	"github.com/determined-ai/determined/master/pkg/vipu/gc"
 )
 
 // ResourcePool manages the agent and task lifecycles.
@@ -175,6 +177,40 @@ func (rp *ResourcePool) allocateResources(ctx *actor.Context, req *sproto.Alloca
 		}
 	}
 
+	// allocate IPUs if requested
+	if req.IPUs > 0 {
+		ctx.Log().Infof("allocate IPUs %+v", req.IPUs)
+		// prepare partition name
+		timestamp := time.Now().UTC().Unix()
+		re := regexp.MustCompile("[^a-zA-Z0-9]+")
+		reqName := re.ReplaceAllString(req.Name, "")
+		partName := fmt.Sprintf("%s-%d", reqName, timestamp)
+		ctx.Log().Infof("Creating VIPU partition: %s", partName)
+
+		cntrRes := resources[0].(*containerResources)
+		// get agent
+		addr := cntrRes.devices[0].UUID
+		vipuCli := gc.NewVipuClient(addr)
+
+		numGCDs := 1
+		numReplicas := 1
+		resp, err := vipuCli.CreatePartitionAndWait(partName, uint32(req.IPUs), uint32(numGCDs), uint32(numReplicas), 120)
+		if err != nil {
+			ctx.Log().Warnf("VIPU partition creation failed with error: %v", err)
+		} else {
+			ctx.Log().Infof("VIPU partition created: %+v", resp)
+		}
+
+		cntrRes.vipuAddr = addr
+		cntrRes.ipuPartition = partName
+
+		// vipuCmd := exec.Command("/home/ubuntu/vipu", "create", "partition", partName, "--size", strconv.Itoa(req.IPUs))
+		// err := vipuCmd.Run()
+		// if err != nil {
+		// 	ctx.Log().Warnf("VIPU Command finished with error: %v", err)
+		// }
+	}
+
 	allocated := sproto.ResourcesAllocated{
 		ID: req.AllocationID, ResourcePool: rp.config.PoolName, Resources: resources,
 	}
@@ -204,8 +240,19 @@ func (rp *ResourcePool) resourcesReleased(ctx *actor.Context, handler *actor.Ref
 	if allocated := rp.taskList.GetAllocations(handler); allocated != nil {
 		ctx.Log().Infof("resources are released for %s", handler.Address())
 		for _, allocation := range allocated.Resources {
-			typed := allocation.(*containerResources)
-			ctx.Tell(typed.agent.Handler, agent.DeallocateContainer{ContainerID: typed.containerID})
+			cntrRes := allocation.(*containerResources)
+			ctx.Tell(cntrRes.agent.Handler, agent.DeallocateContainer{ContainerID: cntrRes.containerID})
+
+			if cntrRes.ipuPartition != "" {
+				vipuCli := gc.NewVipuClient(cntrRes.vipuAddr)
+
+				err := vipuCli.RemovePartition(cntrRes.ipuPartition, false)
+				if err != nil {
+					ctx.Log().Warnf("VIPU partition %s removal failed with error: %v", cntrRes.ipuPartition, err)
+				} else {
+					ctx.Log().Infof("VIPU partition %s removed", cntrRes.ipuPartition)
+				}
+			}
 		}
 	}
 	rp.taskList.RemoveTaskByHandler(handler)
@@ -685,10 +732,12 @@ func (rp *ResourcePool) refreshAgentStateCacheFor(ctx *actor.Context, agents []*
 
 // containerResources contains information for tasks have been allocated but not yet started.
 type containerResources struct {
-	req         *sproto.AllocateRequest
-	agent       *agent.AgentState
-	devices     []device.Device
-	containerID cproto.ID
+	req          *sproto.AllocateRequest
+	agent        *agent.AgentState
+	devices      []device.Device
+	containerID  cproto.ID
+	vipuAddr     string
+	ipuPartition string
 }
 
 // Summary summarizes a container allocation.
@@ -722,6 +771,12 @@ func (c containerResources) Start(
 	spec.ExtraEnvVars[sproto.ResourcesTypeEnvVar] = string(sproto.ResourcesTypeDockerContainer)
 	spec.UseHostMode = rri.IsMultiAgent
 	spec.Devices = c.devices
+	if c.ipuPartition != "" {
+		spec.ExtraEnvVars["IPUOF_VIPU_API_PARTITION_ID"] = c.ipuPartition
+		host, port, _ := net.SplitHostPort(c.vipuAddr)
+		spec.ExtraEnvVars["IPUOF_VIPU_API_HOST"] = host
+		spec.ExtraEnvVars["IPUOF_VIPU_API_PORT"] = port
+	}
 	ctx.Tell(handler, sproto.StartTaskContainer{
 		TaskActor: c.req.TaskActor,
 		StartContainer: aproto.StartContainer{

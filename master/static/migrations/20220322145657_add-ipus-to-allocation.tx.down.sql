@@ -1,0 +1,1 @@
+ALTER TABLE allocations DROP COLUMN ipus;

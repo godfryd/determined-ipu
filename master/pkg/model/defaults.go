@@ -25,6 +25,7 @@ func DefaultEnvConfig(taskContainerDefaults *TaskContainerDefaultsConfig) Enviro
 			CPU:  expconf.CPUImage,
 			CUDA: expconf.CUDAImage,
 			ROCM: expconf.ROCMImage,
+			VPOD: expconf.VPODImage,
 		},
 	}
 

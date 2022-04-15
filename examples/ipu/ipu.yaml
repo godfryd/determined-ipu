@@ -1,0 +1,19 @@
+name: ipu_mnist
+records_per_epoch: 60000
+hyperparameters:
+  global_batch_size: 1
+searcher:
+   name: single
+   metric: loss
+   max_length:
+     batches: 1
+max_restarts: 0
+
+# run on graphcore's Docker image with Poplar software and intrumented tensorflow 2.4
+environment:
+  image: graphcore/tensorflow
+# work around det framework - invoke the model directly
+entrypoint: python3 ipu.py
+# run the workload on 4 IPUs
+resources:
+  ipus: 4

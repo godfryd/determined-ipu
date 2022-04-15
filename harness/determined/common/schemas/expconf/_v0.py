@@ -235,6 +235,7 @@ class EnvironmentImageV0(schemas.SchemaBase):
     cpu: Optional[str] = None
     cuda: Optional[str] = None
     rocm: Optional[str] = None
+    vpod: Optional[str] = None
 
     @schemas.auto_init
     def __init__(
@@ -242,6 +243,7 @@ class EnvironmentImageV0(schemas.SchemaBase):
         cpu: Optional[str] = None,
         cuda: Optional[str] = None,
         rocm: Optional[str] = None,
+        vpod: Optional[str] = None,
     ) -> None:
         pass
 
@@ -249,7 +251,7 @@ class EnvironmentImageV0(schemas.SchemaBase):
     def from_dict(cls, d: Union[dict, str], prevalidated: bool = False) -> "EnvironmentImageV0":
         # Accept either a string or a map of strings to strings.
         if isinstance(d, str):
-            d = {"cpu": d, "cuda": d, "rocm": d}
+            d = {"cpu": d, "cuda": d, "rocm": d, "vpod": d}
         if "cuda" not in d and "gpu" in d:
             d["cuda"] = d["gpu"]
             del d["gpu"]
@@ -269,12 +271,16 @@ class EnvironmentImageV0(schemas.SchemaBase):
                 "determinedai/environments:cuda-11.3-pytorch-1.10-lightning-1.5-tf-2.8-gpu-83dbcaa"
             )
 
+        if self.vpod is None:
+            self.vpod = "graphcore/tensorflow"
+
 
 class EnvironmentVariablesV0(schemas.SchemaBase):
     _id = "http://determined.ai/schemas/expconf/v0/environment-variables.json"
     cpu: Optional[List[str]] = None
     cuda: Optional[List[str]] = None
     rocm: Optional[List[str]] = None
+    vpod: Optional[List[str]] = None
 
     @schemas.auto_init
     def __init__(
@@ -282,6 +288,7 @@ class EnvironmentVariablesV0(schemas.SchemaBase):
         cpu: Optional[List[str]] = None,
         cuda: Optional[List[str]] = None,
         rocm: Optional[List[str]] = None,
+        vpod: Optional[List[str]] = None,
     ) -> None:
         pass
 
@@ -291,7 +298,7 @@ class EnvironmentVariablesV0(schemas.SchemaBase):
     ) -> "EnvironmentVariablesV0":
         # Accept either a list of strings or a map of strings to lists of strings.
         if isinstance(d, (list, tuple)):
-            d = {"cpu": d, "cuda": d, "rocm": d}
+            d = {"cpu": d, "cuda": d, "rocm": d, "vpod": d}
         if "cuda" not in d and "gpu" in d:
             d["cuda"] = d["gpu"]
             del d["gpu"]

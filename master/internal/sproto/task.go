@@ -38,6 +38,7 @@ type (
 		Label               string
 		ResourcePool        string
 		FittingRequirements FittingRequirements
+		IPUs                int
 
 		// Behavioral configuration.
 		Preemptible  bool

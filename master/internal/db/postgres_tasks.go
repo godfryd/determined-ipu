@@ -91,8 +91,8 @@ WHERE task_id = $1
 // AddAllocation persists the existence of an allocation.
 func (db *PgDB) AddAllocation(a *model.Allocation) error {
 	return db.namedExecOne(`
-INSERT INTO allocations (task_id, allocation_id, slots, resource_pool, agent_label, start_time)
-VALUES (:task_id, :allocation_id, :slots, :resource_pool, :agent_label, :start_time)
+INSERT INTO allocations (task_id, allocation_id, slots, ipus, resource_pool, agent_label, start_time)
+VALUES (:task_id, :allocation_id, :slots, :ipus, :resource_pool, :agent_label, :start_time)
 `, a)
 }
 

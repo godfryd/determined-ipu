@@ -186,6 +186,13 @@ func (t *TaskSpec) ToDockerSpec() cproto.Spec {
 		})
 	}
 
+	privileged := false
+
+	if resources.RawIPUs != nil && *resources.RawIPUs > 0 {
+		network = hostMode
+		privileged = true
+	}
+
 	spec := cproto.Spec{
 		PullSpec: cproto.PullSpec{
 			Registry:  env.RegistryAuth(),
@@ -202,6 +209,7 @@ func (t *TaskSpec) ToDockerSpec() cproto.Spec {
 			},
 			HostConfig: docker.HostConfig{
 				NetworkMode:     network,
+				Privileged:      privileged,
 				Mounts:          t.Mounts,
 				PublishAllPorts: true,
 				ShmSize:         shmSize,
