@@ -726,7 +726,8 @@ schemas = {
     "eventuallyRequired": [
         "cpu",
         "cuda",
-        "rocm"
+        "rocm",
+        "vpod"
     ],
     "properties": {
         "cpu": {
@@ -744,6 +745,13 @@ schemas = {
             "default": null
         },
         "rocm": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "default": null
+        },
+        "vpod": {
             "type": [
                 "string",
                 "null"
@@ -769,7 +777,7 @@ schemas = {
     "$id": "http://determined.ai/schemas/expconf/v0/environment-image.json",
     "title": "EnvironmentImage",
     "union": {
-        "defaultMessage": "is neither a string nor a map of cpu, cuda, or rocm to strings",
+        "defaultMessage": "is neither a string nor a map of cpu, cuda, rocm or vpod to strings",
         "items": [
             {
                 "unionKey": "never",
@@ -824,6 +832,16 @@ schemas = {
                 "type": "string"
             }
         },
+        "vpod": {
+            "type": [
+                "array",
+                "null"
+            ],
+            "default": [],
+            "items": {
+                "type": "string"
+            }
+        },
         "gpu": {
             "type": [
                 "array",
@@ -846,7 +864,7 @@ schemas = {
     "$id": "http://determined.ai/schemas/expconf/v0/environment-variables.json",
     "title": "EnvironmentVariables",
     "union": {
-        "defaultMessage": "is neither a list of strings nor a map of cpu, cuda, or rocm to lists of strings",
+        "defaultMessage": "is neither a list of strings nor a map of cpu, cuda, rocm or vpod to lists of strings",
         "items": [
             {
                 "unionKey": "never",
@@ -2108,6 +2126,13 @@ schemas = {
         "weight": {
             "type": [
                 "number",
+                "null"
+            ],
+            "default": 1
+        },
+        "ipus": {
+            "type": [
+                "integer",
                 "null"
             ],
             "default": 1

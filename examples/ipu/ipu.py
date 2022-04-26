@@ -9,10 +9,10 @@ from tensorflow.python import ipu
 
 
 # Create a simple model.
-def create_model():
+def create_model(layer_size):
     return tf.keras.Sequential([
         tf.keras.layers.Flatten(),
-        tf.keras.layers.Dense(256, activation='relu'),
+        tf.keras.layers.Dense(layer_size, activation='relu'),
         tf.keras.layers.Dense(128, activation='relu'),
         tf.keras.layers.Dense(10)
     ])
@@ -45,7 +45,7 @@ def main(core_context, hparams, user_data, latest_checkpoint):
     strategy = ipu.ipu_strategy.IPUStrategy()
     with strategy.scope():
         # Create a Keras model inside the strategy.
-        model = create_model()
+        model = create_model(hparams["layer1"])
 
         # Compile the model for training.
         model.compile(
@@ -54,7 +54,23 @@ def main(core_context, hparams, user_data, latest_checkpoint):
             metrics=["accuracy"],
         )
 
-        model.fit(dataset, epochs=2, steps_per_epoch=100)
+        epochs_trained = 0
+
+        # Iterate through searcher operations
+        # Operations are unitless, but for this example we treat them as epochs
+        for op in core_context.searcher.operations():
+            print('op', op)
+
+            while epochs_trained < op.length:
+                model.fit(dataset, epochs=2, steps_per_epoch=100)
+
+                epochs_trained += 1
+                op.report_progress(epochs_trained)
+
+            # Evaluate the model and report the loss for this op
+            loss = model.evaluate(dataset, steps=16)
+            print('loss', loss)
+            op.report_completed(loss[0])
 
 
 if __name__ == "__main__":

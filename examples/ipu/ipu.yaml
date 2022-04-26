@@ -2,11 +2,16 @@ name: ipu_mnist
 records_per_epoch: 60000
 hyperparameters:
   global_batch_size: 1
+  layer1:
+    type: int
+    minval: 32
+    maxval: 256
 searcher:
-   name: single
+   name: random
    metric: loss
-   max_length:
-     batches: 1
+   max_length: 50
+   max_trials: 8
+   max_concurrent_trials: 2
 max_restarts: 0
 
 # run on graphcore's Docker image with Poplar software and intrumented tensorflow 2.4
