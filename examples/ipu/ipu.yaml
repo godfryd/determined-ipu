@@ -1,7 +1,7 @@
 name: ipu_mnist
 records_per_epoch: 60000
 hyperparameters:
-  global_batch_size: 1
+  batch_size: 32
   layer1:
     type: int
     minval: 32

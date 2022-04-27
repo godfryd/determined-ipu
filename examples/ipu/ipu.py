@@ -1,4 +1,5 @@
 import os
+import math
 import time
 
 import determined as det
@@ -19,18 +20,19 @@ def create_model(layer_size):
 
 
 # Create a dataset for the model.
-def create_dataset():
+def create_dataset(batch_size):
     mnist = tf.keras.datasets.mnist
 
     (x_train, y_train), (_, _) = mnist.load_data()
     x_train = x_train / 255.0
 
     train_ds = tf.data.Dataset.from_tensor_slices(
-        (x_train, y_train)).shuffle(10000).batch(32, drop_remainder=True)
+        (x_train, y_train)).shuffle(10000).batch(batch_size, drop_remainder=True)
     train_ds = train_ds.map(lambda d, l:
                             (tf.cast(d, tf.float32), tf.cast(l, tf.int32)))
 
-    return train_ds.repeat().prefetch(16)
+    batches_in_ds = math.ceil(len(train_ds) / batch_size)
+    return train_ds.repeat().prefetch(16), batches_in_ds
 
 
 def main(core_context, hparams, user_data, latest_checkpoint):
@@ -39,7 +41,9 @@ def main(core_context, hparams, user_data, latest_checkpoint):
     config.auto_select_ipus = 1
     config.configure_ipu_system()
 
-    dataset = create_dataset()
+    batch_size = hparams["batch_size"]
+
+    dataset, batches_in_ds = create_dataset(batch_size)
 
     # Create a strategy for execution on the IPU.
     strategy = ipu.ipu_strategy.IPUStrategy()
@@ -55,6 +59,7 @@ def main(core_context, hparams, user_data, latest_checkpoint):
         )
 
         epochs_trained = 0
+        batches_trained = 0
 
         # Iterate through searcher operations
         # Operations are unitless, but for this example we treat them as epochs
@@ -65,10 +70,12 @@ def main(core_context, hparams, user_data, latest_checkpoint):
                 model.fit(dataset, epochs=2, steps_per_epoch=100)
 
                 epochs_trained += 1
+                batches_trained += batches_in_ds
                 op.report_progress(epochs_trained)
 
             # Evaluate the model and report the loss for this op
             loss = model.evaluate(dataset, steps=16)
+            core_context.train.report_training_metrics(latest_batch=batches_trained, metrics={"loss": loss})
             print('loss', loss)
             op.report_completed(loss[0])
 
