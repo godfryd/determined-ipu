@@ -55,7 +55,7 @@ def main(core_context, hparams, user_data, latest_checkpoint):
         model.compile(
             loss=tf.keras.losses.SparseCategoricalCrossentropy(),
             optimizer=tf.keras.optimizers.RMSprop(),
-            metrics=["accuracy"],
+            metrics=["accuracy", "mse"],
         )
 
         epochs_trained = 0
@@ -71,11 +71,14 @@ def main(core_context, hparams, user_data, latest_checkpoint):
 
                 epochs_trained += 1
                 batches_trained += batches_in_ds
+                loss = model.evaluate(dataset, steps=16)
+                core_context.train.report_training_metrics(latest_batch=batches_trained, metrics={"loss": loss})
                 op.report_progress(epochs_trained)
 
             # Evaluate the model and report the loss for this op
             loss = model.evaluate(dataset, steps=16)
-            core_context.train.report_training_metrics(latest_batch=batches_trained, metrics={"loss": loss})
+            core_context.train.report_validation_metrics(latest_batch=batches_trained,
+                                                         metrics={"loss": loss[0], "accuracy": loss[1], "mse": loss[2]})
             print('loss', loss)
             op.report_completed(loss[0])
 
